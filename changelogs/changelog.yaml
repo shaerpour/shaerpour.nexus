@@ -1,0 +1,17 @@
+ancestor: null
+releases:
+  0.1.0:
+    changes:
+      major_changes:
+      - repository_docker - new module to manage Docker repositories.
+      - repository_raw - new module to manage raw repositories.
+    fragments:
+    - initial-release.yml
+    modules:
+    - description: Manage Nexus Docker repositories.
+      name: repository_docker
+      namespace: ''
+    - description: Manage Nexus raw repositories.
+      name: repository_raw
+      namespace: ''
+    release_date: '2026-10-24'

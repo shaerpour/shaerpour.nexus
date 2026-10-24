@@ -1,0 +1,29 @@
+objects:
+  role: {}
+plugins:
+  become: {}
+  cache: {}
+  callback: {}
+  cliconf: {}
+  connection: {}
+  filter: {}
+  httpapi: {}
+  inventory: {}
+  lookup: {}
+  module:
+    repository_docker:
+      description: Manage Nexus Docker repositories
+      name: repository_docker
+      namespace: ''
+      version_added: 0.1.0
+    repository_raw:
+      description: Manage Nexus raw repositories
+      name: repository_raw
+      namespace: ''
+      version_added: 0.1.0
+  netconf: {}
+  shell: {}
+  strategy: {}
+  test: {}
+  vars: {}
+version: 0.1.0
