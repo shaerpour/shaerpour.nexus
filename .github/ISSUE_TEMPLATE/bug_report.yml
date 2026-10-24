@@ -1,0 +1,71 @@
+name: Bug report
+description: Report something that does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        Before you submit:
+        - Search the [existing issues](https://github.com/shaerpour/shaerpour.nexus/issues) to see if it is already reported.
+        - Check whether the bug still happens on the latest release.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly explain the problem.
+    validations:
+      required: true
+  - type: input
+    id: component
+    attributes:
+      label: Module
+      description: The module that fails, without the collection prefix.
+    validations:
+      required: true
+  - type: textarea
+    id: collection_version
+    attributes:
+      label: Collection version
+      description: Output of `ansible-galaxy collection list shaerpour.nexus`.
+      render: console
+    validations:
+      required: true
+  - type: textarea
+    id: ansible_version
+    attributes:
+      label: Ansible version
+      description: Output of `ansible --version`.
+      render: console
+    validations:
+      required: true
+  - type: input
+    id: nexus_version
+    attributes:
+      label: Nexus Repository version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A minimal task or playbook that shows the problem.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected results
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual results
+      description: What happened instead. Run with `-vvvv` and paste the output.
+      render: console
+    validations:
+      required: true

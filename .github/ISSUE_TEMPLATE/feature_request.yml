@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an improvement or a new module.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. Please search the [existing issues](https://github.com/shaerpour/shaerpour.nexus/issues) first to see if it was already requested.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the feature or improvement.
+    validations:
+      required: true
+  - type: input
+    id: component
+    attributes:
+      label: Module
+      description: The module it relates to, or the name of the new module you would like, without the collection prefix.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional information
+      description: What problem does it solve, and how would you use it? A sample task is welcome.
+      render: yaml
