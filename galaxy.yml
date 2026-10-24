@@ -1,0 +1,27 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+namespace: shaerpour
+name: nexus
+version: 0.1.0
+readme: README.md
+authors:
+  - Amirhosein Shaerpour <shaerpourr@gmail.com> (https://github.com/shaerpour)
+description: >-
+  The shaerpour.nexus collection manages Sonatype Nexus Repository, including repositories
+  of different formats and types, users, roles and permissions.
+license:
+  - GPL-3.0-or-later
+tags:
+  - nexus
+  - sonatype
+  - artifact
+  - repository
+dependencies: {}
+repository: https://github.com/shaerpour/shaerpour.nexus
+documentation: https://github.com/shaerpour/shaerpour.nexus#readme
+homepage: https://github.com/shaerpour/shaerpour.nexus
+issues: https://github.com/shaerpour/shaerpour.nexus/issues
+build_ignore:
+  - .venv
+  - tests

@@ -1,0 +1,8 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+requires_ansible: ">=2.19.0"
+
+action_groups:
+  all:
+    - repository_raw

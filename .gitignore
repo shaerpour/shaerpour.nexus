@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+tests/output/
+tests/integration/inventory
+tests/integration/integration_config.yml

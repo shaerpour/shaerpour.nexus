@@ -1,0 +1,4 @@
+# Copy to integration_config.yml and fill in. The copy is ignored by git.
+nexus_url: https://nexus.example.com
+nexus_username: admin
+nexus_password: change-me
