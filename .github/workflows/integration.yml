@@ -1,0 +1,55 @@
+name: Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      nexus:
+        image: sonatype/nexus3
+        ports:
+          - 8081:8081
+        env:
+          NEXUS_SECURITY_RANDOMPASSWORD: "false"
+          INSTALL4J_ADD_VM_PARAMS: -Xms512m -Xmx1g -XX:MaxDirectMemorySize=1g
+    steps:
+      - name: Check out the collection
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/shaerpour/nexus
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install ansible-core
+        run: pip install ansible-core
+
+      - name: Wait for Nexus
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8081/service/rest/v1/status; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Nexus did not start in time" >&2
+          exit 1
+
+      - name: Configure the tests
+        working-directory: ansible_collections/shaerpour/nexus
+        run: |
+          cat > tests/integration/integration_config.yml <<CONFIG
+          nexus_url: http://localhost:8081
+          nexus_username: admin
+          nexus_password: admin123
+          CONFIG
+
+      - name: Run integration tests
+        working-directory: ansible_collections/shaerpour/nexus
+        run: ansible-test integration --allow-unsupported -v

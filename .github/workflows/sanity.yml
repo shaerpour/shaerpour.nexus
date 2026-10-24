@@ -1,0 +1,27 @@
+name: Sanity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the collection
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/shaerpour/nexus
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install ansible-core
+        run: pip install ansible-core
+
+      - name: Run sanity tests
+        working-directory: ansible_collections/shaerpour/nexus
+        run: ansible-test sanity --docker default -v
