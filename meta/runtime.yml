@@ -6,3 +6,4 @@ requires_ansible: ">=2.19.0"
 action_groups:
   all:
     - repository_raw
+    - repository_docker

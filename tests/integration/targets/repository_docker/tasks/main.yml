@@ -1,0 +1,101 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.repository_docker
+  module_defaults:
+    shaerpour.nexus.repository_docker:
+      url: "{{ nexus_url }}"
+      username: "{{ nexus_username }}"
+      password: "{{ nexus_password }}"
+  block:
+    - name: Create hosted repository in check mode
+      shaerpour.nexus.repository_docker:
+        name: test-docker-hosted
+      check_mode: true
+      register: check
+
+    - name: Create hosted repository
+      shaerpour.nexus.repository_docker:
+        name: test-docker-hosted
+        http_port: 5051
+      register: create
+
+    - name: Create hosted repository again
+      shaerpour.nexus.repository_docker:
+        name: test-docker-hosted
+        http_port: 5051
+      register: again
+
+    - name: Update hosted repository
+      shaerpour.nexus.repository_docker:
+        name: test-docker-hosted
+        http_port: 5051
+        online: false
+      register: update
+
+    - name: Create proxy repository
+      shaerpour.nexus.repository_docker:
+        name: test-docker-proxy
+        type: proxy
+        remote_url: https://registry-1.docker.io
+        index_type: hub
+      register: proxy
+
+    - name: Create proxy repository again
+      shaerpour.nexus.repository_docker:
+        name: test-docker-proxy
+        type: proxy
+        remote_url: https://registry-1.docker.io
+        index_type: hub
+      register: proxy_again
+
+    - name: Create group repository
+      shaerpour.nexus.repository_docker:
+        name: test-docker-group
+        type: group
+        http_port: 5052
+        members: [test-docker-hosted, test-docker-proxy]
+      register: group
+
+    - name: Create group repository again
+      shaerpour.nexus.repository_docker:
+        name: test-docker-group
+        type: group
+        http_port: 5052
+        members: [test-docker-hosted, test-docker-proxy]
+      register: group_again
+
+    - name: Proxy without remote_url fails
+      shaerpour.nexus.repository_docker:
+        name: test-docker-invalid
+        type: proxy
+      register: invalid
+      ignore_errors: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - create is changed
+          - again is not changed
+          - update is changed
+          - proxy is changed
+          - proxy_again is not changed
+          - group is changed
+          - group_again is not changed
+          - invalid is failed
+
+  always:
+    - name: Delete repositories
+      shaerpour.nexus.repository_docker:
+        name: "{{ item.name }}"
+        type: "{{ item.type }}"
+        remote_url: https://registry-1.docker.io
+        index_type: hub
+        members: [test-docker-hosted]
+        state: absent
+      loop:
+        - {name: test-docker-group, type: group}
+        - {name: test-docker-proxy, type: proxy}
+        - {name: test-docker-hosted, type: hosted}
