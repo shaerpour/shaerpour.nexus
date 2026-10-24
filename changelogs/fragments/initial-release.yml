@@ -1,3 +1,0 @@
-major_changes:
-  - repository_raw - new module to manage raw repositories.
-  - repository_docker - new module to manage Docker repositories.
