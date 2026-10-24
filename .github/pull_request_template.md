@@ -27,3 +27,4 @@
 - [ ] The tests pass against a real Nexus (version: )
 - [ ] Module documentation is updated
 - [ ] `meta/runtime.yml` is updated, if a module was added
+- [ ] A changelog fragment is added in `changelogs/fragments/`
