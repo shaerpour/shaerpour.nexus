@@ -6,7 +6,7 @@ name: nexus
 version: 0.1.0
 readme: README.md
 authors:
-  - Amirhosein Shaerpour <shaerpourr@gmail.com> (https://github.com/shaerpour)
+  - Amirhosein Shaerpour (github.com/shaerpour)
 description: >-
   The shaerpour.nexus collection manages Sonatype Nexus Repository, including repositories
   of different formats and types, users, roles and permissions.
