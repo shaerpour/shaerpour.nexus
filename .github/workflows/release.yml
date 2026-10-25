@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the collection
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install ansible-core
+        run: pip install ansible-core
+
+      - name: Check the tag matches galaxy.yml
+        run: |
+          version=$(sed -n 's/^version: *//p' galaxy.yml)
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match galaxy.yml version ${version}" >&2
+            exit 1
+          fi
+
+      - name: Build the collection
+        run: ansible-galaxy collection build --output-path dist
+
+      - name: Publish to Ansible Galaxy
+        env:
+          GALAXY_API_KEY: ${{ secrets.GALAXY_API_KEY }}
+        run: ansible-galaxy collection publish dist/*.tar.gz --token "$GALAXY_API_KEY"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz --generate-notes
