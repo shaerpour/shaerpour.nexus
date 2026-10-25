@@ -9,3 +9,4 @@ action_groups:
     - repository_docker
     - repository_maven
     - repository_pypi
+    - repository_composer

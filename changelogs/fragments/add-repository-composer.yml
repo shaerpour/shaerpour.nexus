@@ -1,0 +1,2 @@
+minor_changes:
+  - repository_composer - add module to manage Composer repositories
