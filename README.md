@@ -11,7 +11,7 @@
 ## Installation
 
 ```bash
-ansible-galaxy collection install git+https://github.com/shaerpour/shaerpour.nexus.git
+ansible-galaxy collection install shaerpour.nexus
 ```
 
 ## Documentation
@@ -27,6 +27,10 @@ To list the modules in the collection:
 ```bash
 ansible-doc -l shaerpour.nexus
 ```
+
+## Release notes
+
+See the [changelog](CHANGELOG.rst) for what changed in each release.
 
 ## Support
 
