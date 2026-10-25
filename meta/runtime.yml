@@ -8,3 +8,4 @@ action_groups:
     - repository_raw
     - repository_docker
     - repository_maven
+    - repository_pypi
