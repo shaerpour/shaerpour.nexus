@@ -7,3 +7,4 @@ action_groups:
   all:
     - repository_raw
     - repository_docker
+    - repository_maven
