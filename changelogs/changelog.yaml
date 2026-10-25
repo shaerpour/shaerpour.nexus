@@ -15,3 +15,24 @@ releases:
       name: repository_raw
       namespace: ''
     release_date: '2026-10-24'
+  0.2.0:
+    changes:
+      minor_changes:
+      - repository_composer - add module to manage Composer repositories
+      - repository_maven - add module to manage Maven repositories
+      - repository_pypi - add module to manage PyPI repositories
+    fragments:
+    - add-repository-composer.yml
+    - add-repository-maven.yml
+    - add-repository-pypi.yml
+    modules:
+    - description: Manage Nexus Composer repositories.
+      name: repository_composer
+      namespace: ''
+    - description: Manage Nexus Maven repositories.
+      name: repository_maven
+      namespace: ''
+    - description: Manage Nexus PyPI repositories.
+      name: repository_pypi
+      namespace: ''
+    release_date: '2026-10-25'
