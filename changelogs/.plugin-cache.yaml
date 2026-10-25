@@ -11,11 +11,26 @@ plugins:
   inventory: {}
   lookup: {}
   module:
+    repository_composer:
+      description: Manage Nexus Composer repositories
+      name: repository_composer
+      namespace: ''
+      version_added: 0.2.0
     repository_docker:
       description: Manage Nexus Docker repositories
       name: repository_docker
       namespace: ''
       version_added: 0.1.0
+    repository_maven:
+      description: Manage Nexus Maven repositories
+      name: repository_maven
+      namespace: ''
+      version_added: 0.2.0
+    repository_pypi:
+      description: Manage Nexus PyPI repositories
+      name: repository_pypi
+      namespace: ''
+      version_added: 0.2.0
     repository_raw:
       description: Manage Nexus raw repositories
       name: repository_raw
@@ -26,4 +41,4 @@ plugins:
   strategy: {}
   test: {}
   vars: {}
-version: 0.1.0
+version: 0.2.0
