@@ -1,0 +1,103 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus and gpg. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.repository_apt
+  module_defaults:
+    shaerpour.nexus.repository_apt:
+      url: "{{ nexus_url }}"
+      username: "{{ nexus_username }}"
+      password: "{{ nexus_password }}"
+  block:
+    - name: Generate a signing key
+      ansible.builtin.shell:
+        executable: /bin/bash
+        cmd: |
+          export GNUPGHOME=$(mktemp -d)
+          gpg --batch --pinentry-mode loopback --passphrase '' --quick-generate-key "Nexus Test <test@example.com>" rsa2048 default never 2>/dev/null
+          gpg --batch --pinentry-mode loopback --passphrase '' --armor --export-secret-keys "Nexus Test"
+      register: signing_key
+      changed_when: false
+
+    - name: Create hosted repository in check mode
+      shaerpour.nexus.repository_apt:
+        name: test-apt-hosted
+        distribution: bookworm
+        signing_keypair: "{{ signing_key.stdout }}"
+      check_mode: true
+      register: check
+
+    - name: Create hosted repository
+      shaerpour.nexus.repository_apt:
+        name: test-apt-hosted
+        distribution: bookworm
+        signing_keypair: "{{ signing_key.stdout }}"
+      register: create
+
+    - name: Create hosted repository again
+      shaerpour.nexus.repository_apt:
+        name: test-apt-hosted
+        distribution: bookworm
+        signing_keypair: "{{ signing_key.stdout }}"
+      register: again
+
+    - name: Update hosted repository
+      shaerpour.nexus.repository_apt:
+        name: test-apt-hosted
+        distribution: bookworm
+        signing_keypair: "{{ signing_key.stdout }}"
+        online: false
+      register: update
+
+    - name: Create proxy repository
+      shaerpour.nexus.repository_apt:
+        name: test-apt-proxy
+        type: proxy
+        remote_url: http://archive.ubuntu.com/ubuntu/
+        distribution: noble
+      register: proxy
+
+    - name: Create proxy repository again
+      shaerpour.nexus.repository_apt:
+        name: test-apt-proxy
+        type: proxy
+        remote_url: http://archive.ubuntu.com/ubuntu/
+        distribution: noble
+      register: proxy_again
+
+    - name: Hosted without signing_keypair fails
+      shaerpour.nexus.repository_apt:
+        name: test-apt-invalid
+        distribution: bookworm
+      register: invalid_hosted
+      ignore_errors: true
+
+    - name: Proxy without remote_url fails
+      shaerpour.nexus.repository_apt:
+        name: test-apt-invalid
+        type: proxy
+        distribution: noble
+      register: invalid_proxy
+      ignore_errors: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - create is changed
+          - again is not changed
+          - update is changed
+          - proxy is changed
+          - proxy_again is not changed
+          - invalid_hosted is failed
+          - invalid_proxy is failed
+
+  always:
+    - name: Delete repositories
+      shaerpour.nexus.repository_apt:
+        name: "{{ item.name }}"
+        type: "{{ item.type }}"
+        state: absent
+      loop:
+        - {name: test-apt-proxy, type: proxy}
+        - {name: test-apt-hosted, type: hosted}

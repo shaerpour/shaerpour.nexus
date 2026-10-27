@@ -10,3 +10,4 @@ action_groups:
     - repository_maven
     - repository_pypi
     - repository_composer
+    - repository_apt
