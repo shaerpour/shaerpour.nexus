@@ -11,3 +11,4 @@ action_groups:
     - repository_pypi
     - repository_composer
     - repository_apt
+    - repository_npm
