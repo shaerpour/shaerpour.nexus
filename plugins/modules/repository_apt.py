@@ -1,0 +1,272 @@
+#!/usr/bin/python
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import annotations
+
+DOCUMENTATION = r"""
+module: repository_apt
+short_description: Manage Nexus APT repositories
+version_added: 0.3.0
+description:
+  - Create, update or delete a Nexus repository of the C(apt) format.
+  - Supports the C(hosted) and C(proxy) repository types. Nexus has no group type for APT.
+author:
+  - Amirhosein Shaerpour (@shaerpour)
+extends_documentation_fragment:
+  - shaerpour.nexus.connection
+options:
+  name:
+    description: Name of the repository.
+    type: str
+    required: true
+  state:
+    description:
+      - C(present) creates the repository, or updates it when its settings differ.
+      - C(absent) deletes the repository.
+    type: str
+    choices: [present, absent]
+    default: present
+  type:
+    description:
+      - Type of the repository.
+      - C(hosted) stores content in Nexus.
+      - C(proxy) caches content of a remote repository.
+      - The type of an existing repository cannot be changed.
+    type: str
+    choices: [hosted, proxy]
+    default: hosted
+  online:
+    description: Whether the repository accepts requests.
+    type: bool
+    default: true
+  blob_store:
+    description: Name of the blob store that holds the repository content.
+    type: str
+    default: default
+  strict_content_type_validation:
+    description: Whether to validate that the content type matches the file extension.
+    type: bool
+    default: true
+  write_policy:
+    description:
+      - Whether existing content can be redeployed.
+      - Only used when I(type=hosted).
+    type: str
+    choices: [allow, allow_once, deny]
+    default: allow_once
+  remote_url:
+    description:
+      - URL of the remote repository to proxy.
+      - Required when I(type=proxy).
+    type: str
+  content_max_age:
+    description:
+      - Minutes to cache content before checking the remote again.
+      - Only used when I(type=proxy).
+    type: int
+    default: 1440
+  metadata_max_age:
+    description:
+      - Minutes to cache metadata before checking the remote again.
+      - Only used when I(type=proxy).
+    type: int
+    default: 1440
+  distribution:
+    description:
+      - Distribution name, for example C(focal) or C(bookworm).
+      - Required when I(type=hosted), and when I(type=proxy) unless I(flat=true).
+    type: str
+  flat:
+    description:
+      - Whether the remote repository uses the flat layout, without distributions.
+      - Only used when I(type=proxy).
+    type: bool
+    default: false
+  signing_keypair:
+    description:
+      - PGP private key, in ASCII-armored form, that Nexus uses to sign the repository metadata.
+      - Required when I(type=hosted).
+    type: str
+  signing_passphrase:
+    description:
+      - Passphrase of the private key in I(signing_keypair).
+      - Nexus does not return it, so changing only the passphrase is not detected.
+      - Only used when I(type=hosted).
+    type: str
+"""
+
+EXAMPLES = r"""
+- name: Create a hosted APT repository
+  shaerpour.nexus.repository_apt:
+    url: https://nexus.example.com
+    username: "{{ nexus_username }}"
+    password: "{{ nexus_password }}"
+    name: apt-hosted
+    distribution: bookworm
+    signing_keypair: "{{ lookup('ansible.builtin.file', 'apt-signing.key') }}"
+    signing_passphrase: "{{ apt_signing_passphrase }}"
+
+- name: Create a proxy APT repository
+  shaerpour.nexus.repository_apt:
+    url: https://nexus.example.com
+    username: "{{ nexus_username }}"
+    password: "{{ nexus_password }}"
+    name: apt-ubuntu
+    type: proxy
+    remote_url: http://archive.ubuntu.com/ubuntu/
+    distribution: noble
+
+- name: Delete a repository
+  shaerpour.nexus.repository_apt:
+    url: https://nexus.example.com
+    username: "{{ nexus_username }}"
+    password: "{{ nexus_password }}"
+    name: apt-hosted
+    type: hosted
+    state: absent
+"""
+
+RETURN = r""" # """
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.shaerpour.nexus.plugins.module_utils.client import (
+    AUTH_ARGUMENT_SPEC,
+    NexusClient,
+    NexusError,
+)
+
+# Nexus caches "not found" answers from the remote of a proxy repository for this many minutes.
+NEGATIVE_CACHE_TTL = 1440
+
+
+def build_payload(params):
+    """Build the request body that Nexus expects for the requested repository."""
+    storage = {
+        "blobStoreName": params["blob_store"],
+        "strictContentTypeValidation": params["strict_content_type_validation"],
+    }
+    payload = {"name": params["name"], "online": params["online"], "storage": storage}
+
+    if params["type"] == "hosted":
+        storage["writePolicy"] = params["write_policy"].upper()
+        payload["apt"] = {"distribution": params["distribution"]}
+        payload["aptSigning"] = {"keypair": params["signing_keypair"]}
+        if params["signing_passphrase"] is not None:
+            payload["aptSigning"]["passphrase"] = params["signing_passphrase"]
+    else:
+        payload["apt"] = {"flat": params["flat"]}
+        if params["distribution"] is not None:
+            payload["apt"]["distribution"] = params["distribution"]
+        payload["proxy"] = {
+            "remoteUrl": params["remote_url"],
+            "contentMaxAge": params["content_max_age"],
+            "metadataMaxAge": params["metadata_max_age"],
+        }
+        payload["negativeCache"] = {"enabled": True, "timeToLive": NEGATIVE_CACHE_TTL}
+        payload["httpClient"] = {"blocked": False, "autoBlock": True}
+
+    return payload
+
+
+def without_passphrase(payload):
+    """Return the payload without the passphrase, which Nexus never returns."""
+    if "aptSigning" not in payload:
+        return payload
+    return {**payload, "aptSigning": {"keypair": payload["aptSigning"]["keypair"]}}
+
+
+def is_subset(desired, current):
+    """Return True when every value in ``desired`` is also set in ``current``.
+
+    Nexus returns more fields than we send (``url``, ``format``, ...), so only
+    the fields we manage are compared.
+    """
+    if isinstance(desired, dict):
+        return all(key in current and is_subset(value, current[key]) for key, value in desired.items())
+    return desired == current
+
+
+def ensure_absent(client, name, current, check_mode):
+    """Delete the repository if it exists. Return True when something changed."""
+    if current is None:
+        return False
+    if not check_mode:
+        client.request("DELETE", f"/repositories/{name}")
+    return True
+
+
+def ensure_present(client, params, current, check_mode):
+    """Create the repository, or update it when it differs. Return True when something changed."""
+    collection_path = f"/repositories/apt/{params['type']}"
+    payload = build_payload(params)
+
+    if current is None:
+        if not check_mode:
+            client.request("POST", collection_path, payload)
+        return True
+
+    if is_subset(without_passphrase(payload), current):
+        return False
+    if not check_mode:
+        client.request("PUT", f"{collection_path}/{params['name']}", payload)
+    return True
+
+
+def ensure(client, params, check_mode):
+    """Bring the repository to the requested state. Return True when something changed."""
+    name = params["name"]
+    current = client.request("GET", f"/repositories/apt/{params['type']}/{name}")
+
+    if params["state"] == "absent":
+        return ensure_absent(client, name, current, check_mode)
+    return ensure_present(client, params, current, check_mode)
+
+
+def missing_options(params):
+    """Return the options that the requested type needs and the task did not set."""
+    if params["type"] == "hosted":
+        required = ["distribution", "signing_keypair"]
+    else:
+        required = ["remote_url"] if params["flat"] else ["remote_url", "distribution"]
+    return [name for name in required if not params[name]]
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            **AUTH_ARGUMENT_SPEC,
+            name=dict(type="str", required=True),
+            state=dict(type="str", default="present", choices=["present", "absent"]),
+            type=dict(type="str", default="hosted", choices=["hosted", "proxy"]),
+            online=dict(type="bool", default=True),
+            blob_store=dict(type="str", default="default"),
+            strict_content_type_validation=dict(type="bool", default=True),
+            write_policy=dict(type="str", default="allow_once", choices=["allow", "allow_once", "deny"]),
+            remote_url=dict(type="str"),
+            content_max_age=dict(type="int", default=1440),
+            metadata_max_age=dict(type="int", default=1440),
+            distribution=dict(type="str"),
+            flat=dict(type="bool", default=False),
+            signing_keypair=dict(type="str", no_log=True),
+            signing_passphrase=dict(type="str", no_log=True),
+        ),
+        supports_check_mode=True,
+    )
+    params = module.params
+    if params["state"] == "present":
+        missing = missing_options(params)
+        if missing:
+            module.fail_json(msg=f"type is {params['type']} but all of the following are missing: {', '.join(missing)}")
+    client = NexusClient(params["url"], params["username"], params["password"], params["validate_certs"])
+
+    try:
+        changed = ensure(client, params, module.check_mode)
+    except NexusError as error:
+        module.fail_json(msg=str(error))
+
+    module.exit_json(changed=changed)
+
+
+if __name__ == "__main__":
+    main()
