@@ -36,3 +36,24 @@ releases:
       name: repository_pypi
       namespace: ''
     release_date: '2026-10-25'
+  0.3.0:
+    changes:
+      minor_changes:
+      - repository_alpine - add module to manage Alpine repositories
+      - repository_apt - add module to manage APT repositories
+      - repository_npm - add module to manage NPM repositories
+    fragments:
+    - add-repository-alpine.yml
+    - add-repository-apt.yml
+    - add-repository-npm.yml
+    modules:
+    - description: Manage Nexus Alpine repositories.
+      name: repository_alpine
+      namespace: ''
+    - description: Manage Nexus APT repositories.
+      name: repository_apt
+      namespace: ''
+    - description: Manage Nexus npm repositories.
+      name: repository_npm
+      namespace: ''
+    release_date: '2026-10-31'
