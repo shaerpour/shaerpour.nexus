@@ -4,6 +4,23 @@ shaerpour.nexus Release Notes
 
 .. contents:: Topics
 
+v0.3.0
+======
+
+Minor Changes
+-------------
+
+- repository_alpine - add module to manage Alpine repositories
+- repository_apt - add module to manage APT repositories
+- repository_npm - add module to manage NPM repositories
+
+New Modules
+-----------
+
+- shaerpour.nexus.repository_alpine - Manage Nexus Alpine repositories.
+- shaerpour.nexus.repository_apt - Manage Nexus APT repositories.
+- shaerpour.nexus.repository_npm - Manage Nexus npm repositories.
+
 v0.2.0
 ======
 

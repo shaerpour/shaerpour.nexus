@@ -11,6 +11,16 @@ plugins:
   inventory: {}
   lookup: {}
   module:
+    repository_alpine:
+      description: Manage Nexus Alpine repositories
+      name: repository_alpine
+      namespace: ''
+      version_added: 0.3.0
+    repository_apt:
+      description: Manage Nexus APT repositories
+      name: repository_apt
+      namespace: ''
+      version_added: 0.3.0
     repository_composer:
       description: Manage Nexus Composer repositories
       name: repository_composer
@@ -26,6 +36,11 @@ plugins:
       name: repository_maven
       namespace: ''
       version_added: 0.2.0
+    repository_npm:
+      description: Manage Nexus npm repositories
+      name: repository_npm
+      namespace: ''
+      version_added: 0.3.0
     repository_pypi:
       description: Manage Nexus PyPI repositories
       name: repository_pypi
@@ -41,4 +56,4 @@ plugins:
   strategy: {}
   test: {}
   vars: {}
-version: 0.2.0
+version: 0.3.0
