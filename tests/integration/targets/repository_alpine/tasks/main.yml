@@ -1,0 +1,112 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus and openssl. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.repository_alpine
+  module_defaults:
+    shaerpour.nexus.repository_alpine:
+      url: "{{ nexus_url }}"
+      username: "{{ nexus_username }}"
+      password: "{{ nexus_password }}"
+  block:
+    - name: Generate a signing key
+      ansible.builtin.command: openssl genrsa 2048
+      register: signing_key
+      changed_when: false
+
+    - name: Create hosted repository in check mode
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-hosted
+      check_mode: true
+      register: check
+
+    - name: Create hosted repository
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-hosted
+      register: create
+
+    - name: Create hosted repository again
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-hosted
+      register: again
+
+    - name: Update hosted repository
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-hosted
+        online: false
+      register: update
+
+    - name: Create proxy repository
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-proxy
+        type: proxy
+        remote_url: https://dl-cdn.alpinelinux.org/alpine/
+        signing_keypair: "{{ signing_key.stdout }}"
+        signing_passphrase: ""
+      register: proxy
+
+    - name: Create proxy repository again
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-proxy
+        type: proxy
+        remote_url: https://dl-cdn.alpinelinux.org/alpine/
+        signing_keypair: "{{ signing_key.stdout }}"
+        signing_passphrase: ""
+      register: proxy_again
+
+    - name: Create group repository
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-group
+        type: group
+        members: [test-alpine-hosted, test-alpine-proxy]
+        signing_keypair: "{{ signing_key.stdout }}"
+      register: group
+
+    - name: Create group repository again
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-group
+        type: group
+        members: [test-alpine-hosted, test-alpine-proxy]
+        signing_keypair: "{{ signing_key.stdout }}"
+      register: group_again
+
+    - name: Proxy without signing_keypair fails
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-invalid
+        type: proxy
+        remote_url: https://dl-cdn.alpinelinux.org/alpine/
+      register: invalid_proxy
+      ignore_errors: true
+
+    - name: Group without signing_keypair fails
+      shaerpour.nexus.repository_alpine:
+        name: test-alpine-invalid
+        type: group
+        members: [test-alpine-hosted]
+      register: invalid_group
+      ignore_errors: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - create is changed
+          - again is not changed
+          - update is changed
+          - proxy is changed
+          - proxy_again is not changed
+          - group is changed
+          - group_again is not changed
+          - invalid_proxy is failed
+          - invalid_group is failed
+
+  always:
+    - name: Delete repositories
+      shaerpour.nexus.repository_alpine:
+        name: "{{ item.name }}"
+        type: "{{ item.type }}"
+        state: absent
+      loop:
+        - {name: test-alpine-group, type: group}
+        - {name: test-alpine-proxy, type: proxy}
+        - {name: test-alpine-hosted, type: hosted}
