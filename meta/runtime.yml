@@ -12,3 +12,4 @@ action_groups:
     - repository_composer
     - repository_apt
     - repository_npm
+    - repository_alpine
