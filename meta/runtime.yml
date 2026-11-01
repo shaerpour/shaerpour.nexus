@@ -14,3 +14,4 @@ action_groups:
     - repository_npm
     - repository_alpine
     - repository_go
+    - repository_helm
