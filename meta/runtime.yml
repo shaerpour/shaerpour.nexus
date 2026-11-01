@@ -15,3 +15,4 @@ action_groups:
     - repository_alpine
     - repository_go
     - repository_helm
+    - repository_yum
