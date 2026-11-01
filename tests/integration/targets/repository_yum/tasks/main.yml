@@ -1,0 +1,108 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus and openssl. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.repository_yum
+  module_defaults:
+    shaerpour.nexus.repository_yum:
+      url: "{{ nexus_url }}"
+      username: "{{ nexus_username }}"
+      password: "{{ nexus_password }}"
+  block:
+    - name: Generate a signing key
+      ansible.builtin.command: openssl genrsa 2048
+      register: signing_key
+      changed_when: false
+
+    - name: Create hosted repository in check mode
+      shaerpour.nexus.repository_yum:
+        name: test-yum-hosted
+      check_mode: true
+      register: check
+
+    - name: Create hosted repository
+      shaerpour.nexus.repository_yum:
+        name: test-yum-hosted
+        repodata_depth: 1
+      register: create
+
+    - name: Create hosted repository again
+      shaerpour.nexus.repository_yum:
+        name: test-yum-hosted
+        repodata_depth: 1
+      register: again
+
+    - name: Update hosted repository
+      shaerpour.nexus.repository_yum:
+        name: test-yum-hosted
+        repodata_depth: 1
+        deploy_policy: permissive
+        online: false
+      register: update
+
+    - name: Create proxy repository
+      shaerpour.nexus.repository_yum:
+        name: test-yum-proxy
+        type: proxy
+        remote_url: https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/
+        signing_keypair: "{{ signing_key.stdout }}"
+        signing_passphrase: ""
+      register: proxy
+
+    - name: Create proxy repository again
+      shaerpour.nexus.repository_yum:
+        name: test-yum-proxy
+        type: proxy
+        remote_url: https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/
+        signing_keypair: "{{ signing_key.stdout }}"
+        signing_passphrase: ""
+      register: proxy_again
+
+    - name: Create group repository
+      shaerpour.nexus.repository_yum:
+        name: test-yum-group
+        type: group
+        members: [test-yum-hosted, test-yum-proxy]
+        signing_keypair: "{{ signing_key.stdout }}"
+      register: group
+
+    - name: Create group repository again
+      shaerpour.nexus.repository_yum:
+        name: test-yum-group
+        type: group
+        members: [test-yum-hosted, test-yum-proxy]
+        signing_keypair: "{{ signing_key.stdout }}"
+      register: group_again
+
+    - name: Proxy without remote_url fails
+      shaerpour.nexus.repository_yum:
+        name: test-yum-invalid
+        type: proxy
+      register: invalid
+      ignore_errors: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - create is changed
+          - again is not changed
+          - update is changed
+          - proxy is changed
+          - proxy_again is not changed
+          - group is changed
+          - group_again is not changed
+          - invalid is failed
+
+  always:
+    - name: Delete repositories
+      shaerpour.nexus.repository_yum:
+        name: "{{ item.name }}"
+        type: "{{ item.type }}"
+        remote_url: https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/
+        members: [test-yum-hosted]
+        state: absent
+      loop:
+        - {name: test-yum-group, type: group}
+        - {name: test-yum-proxy, type: proxy}
+        - {name: test-yum-hosted, type: hosted}
