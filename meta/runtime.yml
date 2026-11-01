@@ -13,3 +13,4 @@ action_groups:
     - repository_apt
     - repository_npm
     - repository_alpine
+    - repository_go
