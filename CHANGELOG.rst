@@ -4,6 +4,25 @@ shaerpour.nexus Release Notes
 
 .. contents:: Topics
 
+v0.4.0
+======
+
+Minor Changes
+-------------
+
+- repository_go - add module to manage go repositories
+- repository_helm - add module to manage Helm repositories
+- repository_nuget - add module to manage Nuget repositories
+- repository_yum - add module to manage yum repositories
+
+New Modules
+-----------
+
+- shaerpour.nexus.repository_go - Manage Nexus Go repositories.
+- shaerpour.nexus.repository_helm - Manage Nexus Helm repositories.
+- shaerpour.nexus.repository_nuget - Manage Nexus NuGet repositories.
+- shaerpour.nexus.repository_yum - Manage Nexus Yum repositories.
+
 v0.3.0
 ======
 

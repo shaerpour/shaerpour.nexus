@@ -31,6 +31,16 @@ plugins:
       name: repository_docker
       namespace: ''
       version_added: 0.1.0
+    repository_go:
+      description: Manage Nexus Go repositories
+      name: repository_go
+      namespace: ''
+      version_added: 0.4.0
+    repository_helm:
+      description: Manage Nexus Helm repositories
+      name: repository_helm
+      namespace: ''
+      version_added: 0.4.0
     repository_maven:
       description: Manage Nexus Maven repositories
       name: repository_maven
@@ -41,6 +51,11 @@ plugins:
       name: repository_npm
       namespace: ''
       version_added: 0.3.0
+    repository_nuget:
+      description: Manage Nexus NuGet repositories
+      name: repository_nuget
+      namespace: ''
+      version_added: 0.4.0
     repository_pypi:
       description: Manage Nexus PyPI repositories
       name: repository_pypi
@@ -51,9 +66,14 @@ plugins:
       name: repository_raw
       namespace: ''
       version_added: 0.1.0
+    repository_yum:
+      description: Manage Nexus Yum repositories
+      name: repository_yum
+      namespace: ''
+      version_added: 0.4.0
   netconf: {}
   shell: {}
   strategy: {}
   test: {}
   vars: {}
-version: 0.3.0
+version: 0.4.0
