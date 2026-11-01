@@ -1,0 +1,2 @@
+minor_changes:
+  - repository_nuget - add module to manage Nuget repositories

@@ -16,3 +16,4 @@ action_groups:
     - repository_go
     - repository_helm
     - repository_yum
+    - repository_nuget
