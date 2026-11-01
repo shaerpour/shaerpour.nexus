@@ -1,0 +1,93 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.repository_go
+  module_defaults:
+    shaerpour.nexus.repository_go:
+      url: "{{ nexus_url }}"
+      username: "{{ nexus_username }}"
+      password: "{{ nexus_password }}"
+  block:
+    - name: Create hosted repository in check mode
+      shaerpour.nexus.repository_go:
+        name: test-go-hosted
+      check_mode: true
+      register: check
+
+    - name: Create hosted repository
+      shaerpour.nexus.repository_go:
+        name: test-go-hosted
+      register: create
+
+    - name: Create hosted repository again
+      shaerpour.nexus.repository_go:
+        name: test-go-hosted
+      register: again
+
+    - name: Update hosted repository
+      shaerpour.nexus.repository_go:
+        name: test-go-hosted
+        online: false
+      register: update
+
+    - name: Create proxy repository
+      shaerpour.nexus.repository_go:
+        name: test-go-proxy
+        type: proxy
+        remote_url: https://proxy.golang.org
+      register: proxy
+
+    - name: Create proxy repository again
+      shaerpour.nexus.repository_go:
+        name: test-go-proxy
+        type: proxy
+        remote_url: https://proxy.golang.org
+      register: proxy_again
+
+    - name: Create group repository
+      shaerpour.nexus.repository_go:
+        name: test-go-group
+        type: group
+        members: [test-go-hosted, test-go-proxy]
+      register: group
+
+    - name: Create group repository again
+      shaerpour.nexus.repository_go:
+        name: test-go-group
+        type: group
+        members: [test-go-hosted, test-go-proxy]
+      register: group_again
+
+    - name: Proxy without remote_url fails
+      shaerpour.nexus.repository_go:
+        name: test-go-invalid
+        type: proxy
+      register: invalid
+      ignore_errors: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - create is changed
+          - again is not changed
+          - update is changed
+          - proxy is changed
+          - proxy_again is not changed
+          - group is changed
+          - group_again is not changed
+          - invalid is failed
+
+  always:
+    - name: Delete repositories
+      shaerpour.nexus.repository_go:
+        name: "{{ item.name }}"
+        type: "{{ item.type }}"
+        remote_url: https://proxy.golang.org
+        members: [test-go-hosted]
+        state: absent
+      loop:
+        - {name: test-go-group, type: group}
+        - {name: test-go-proxy, type: proxy}
+        - {name: test-go-hosted, type: hosted}
