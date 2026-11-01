@@ -57,3 +57,29 @@ releases:
       name: repository_npm
       namespace: ''
     release_date: '2026-10-31'
+  0.4.0:
+    changes:
+      minor_changes:
+      - repository_go - add module to manage go repositories
+      - repository_helm - add module to manage Helm repositories
+      - repository_nuget - add module to manage Nuget repositories
+      - repository_yum - add module to manage yum repositories
+    fragments:
+    - add-repository-go.yml
+    - add-repository-helm.yml
+    - add-repository-nuget.yml
+    - add-repository-yum.yml
+    modules:
+    - description: Manage Nexus Go repositories.
+      name: repository_go
+      namespace: ''
+    - description: Manage Nexus Helm repositories.
+      name: repository_helm
+      namespace: ''
+    - description: Manage Nexus NuGet repositories.
+      name: repository_nuget
+      namespace: ''
+    - description: Manage Nexus Yum repositories.
+      name: repository_yum
+      namespace: ''
+    release_date: '2026-11-01'
