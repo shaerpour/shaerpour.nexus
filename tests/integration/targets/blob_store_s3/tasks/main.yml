@@ -1,0 +1,80 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus and an S3 compatible service with an existing bucket.
+# Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.blob_store_s3
+  module_defaults:
+    shaerpour.nexus.blob_store_s3:
+      url: "{{ nexus_url }}"
+      username: "{{ nexus_username }}"
+      password: "{{ nexus_password }}"
+      bucket: "{{ nexus_s3_bucket }}"
+      endpoint: "{{ nexus_s3_endpoint }}"
+      force_path_style: true
+      access_key_id: "{{ nexus_s3_access_key }}"
+      secret_access_key: "{{ nexus_s3_secret_key }}"
+  block:
+    - name: Create blob store in check mode
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3
+      check_mode: true
+      register: check
+
+    - name: Create blob store
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3
+        prefix: test-blob-s3
+      register: create
+
+    - name: Create blob store again
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3
+        prefix: test-blob-s3
+      register: again
+
+    - name: Change prefix
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3
+        prefix: test-blob-s3-changed
+      register: prefix
+
+    - name: Add soft quota
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3
+        prefix: test-blob-s3-changed
+        soft_quota_type: space_used
+        soft_quota_limit: 1048576
+      register: quota
+
+    - name: Add soft quota again
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3
+        prefix: test-blob-s3-changed
+        soft_quota_type: space_used
+        soft_quota_limit: 1048576
+      register: quota_again
+
+    - name: Soft quota type without limit fails
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3-invalid
+        soft_quota_type: space_used
+      register: invalid
+      ignore_errors: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - create is changed
+          - again is not changed
+          - prefix is changed
+          - quota is changed
+          - quota_again is not changed
+          - invalid is failed
+
+  always:
+    - name: Delete blob store
+      shaerpour.nexus.blob_store_s3:
+        name: test-blob-s3
+        state: absent

@@ -18,3 +18,4 @@ action_groups:
     - repository_yum
     - repository_nuget
     - blob_store_file
+    - blob_store_s3
