@@ -17,3 +17,4 @@ action_groups:
     - repository_helm
     - repository_yum
     - repository_nuget
+    - blob_store_file

@@ -1,0 +1,98 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.blob_store_file
+  module_defaults:
+    shaerpour.nexus.blob_store_file:
+      url: "{{ nexus_url }}"
+      username: "{{ nexus_username }}"
+      password: "{{ nexus_password }}"
+  block:
+    - name: Create blob store in check mode
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file
+      check_mode: true
+      register: check
+
+    - name: Create blob store
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file
+      register: create
+
+    - name: Create blob store again
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file
+      register: again
+
+    - name: Add soft quota
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file
+        soft_quota_type: space_used
+        soft_quota_limit: 1048576
+      register: quota
+
+    - name: Add soft quota again
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file
+        soft_quota_type: space_used
+        soft_quota_limit: 1048576
+      register: quota_again
+
+    - name: Change soft quota
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file
+        soft_quota_type: space_remaining
+        soft_quota_limit: 2097152
+      register: quota_change
+
+    - name: Remove soft quota
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file
+      register: quota_remove
+
+    - name: Create blob store with path and soft quota
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file-path
+        path: test-blob-file-custom
+        soft_quota_type: space_used
+        soft_quota_limit: 1048576
+      register: custom
+
+    - name: Create blob store with path and soft quota again
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file-path
+        path: test-blob-file-custom
+        soft_quota_type: space_used
+        soft_quota_limit: 1048576
+      register: custom_again
+
+    - name: Soft quota type without limit fails
+      shaerpour.nexus.blob_store_file:
+        name: test-blob-file-invalid
+        soft_quota_type: space_used
+      register: invalid
+      ignore_errors: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - create is changed
+          - again is not changed
+          - quota is changed
+          - quota_again is not changed
+          - quota_change is changed
+          - quota_remove is changed
+          - custom is changed
+          - custom_again is not changed
+          - invalid is failed
+
+  always:
+    - name: Delete blob stores
+      shaerpour.nexus.blob_store_file:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - test-blob-file
+        - test-blob-file-path
