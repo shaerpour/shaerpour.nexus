@@ -2,3 +2,9 @@
 nexus_url: https://nexus.example.com
 nexus_username: admin
 nexus_password: change-me
+
+# Only needed by the blob_store_s3 target: an S3 compatible service (for example MinIO) with an existing bucket.
+nexus_s3_endpoint: https://minio.example.com
+nexus_s3_bucket: nexus-test
+nexus_s3_access_key: change-me
+nexus_s3_secret_key: change-me
