@@ -4,6 +4,21 @@ shaerpour.nexus Release Notes
 
 .. contents:: Topics
 
+v0.5.0
+======
+
+Minor Changes
+-------------
+
+- blob_store_file - add module to manage file blob stores
+- blob_store_s3 - add module to manage S3 blob stores
+
+New Modules
+-----------
+
+- shaerpour.nexus.blob_store_file - Manage Nexus file blob stores.
+- shaerpour.nexus.blob_store_s3 - Manage Nexus S3 blob stores.
+
 v0.4.0
 ======
 

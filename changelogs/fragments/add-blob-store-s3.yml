@@ -1,2 +1,0 @@
-minor_changes:
-  - blob_store_s3 - add module to manage S3 blob stores
