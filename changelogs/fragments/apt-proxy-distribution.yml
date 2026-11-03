@@ -1,2 +1,0 @@
-bugfixes:
-  - repository_apt - do not require ``distribution`` for proxy repositories.
