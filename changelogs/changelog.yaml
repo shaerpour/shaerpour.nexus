@@ -83,3 +83,19 @@ releases:
       name: repository_yum
       namespace: ''
     release_date: '2026-11-01'
+  0.5.0:
+    changes:
+      minor_changes:
+      - blob_store_file - add module to manage file blob stores
+      - blob_store_s3 - add module to manage S3 blob stores
+    fragments:
+    - add-blob-store-file.yml
+    - add-blob-store-s3.yml
+    modules:
+    - description: Manage Nexus file blob stores.
+      name: blob_store_file
+      namespace: ''
+    - description: Manage Nexus S3 blob stores.
+      name: blob_store_s3
+      namespace: ''
+    release_date: '2026-11-03'

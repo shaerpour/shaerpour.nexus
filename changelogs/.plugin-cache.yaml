@@ -11,6 +11,16 @@ plugins:
   inventory: {}
   lookup: {}
   module:
+    blob_store_file:
+      description: Manage Nexus file blob stores
+      name: blob_store_file
+      namespace: ''
+      version_added: 0.5.0
+    blob_store_s3:
+      description: Manage Nexus S3 blob stores
+      name: blob_store_s3
+      namespace: ''
+      version_added: 0.5.0
     repository_alpine:
       description: Manage Nexus Alpine repositories
       name: repository_alpine
@@ -76,4 +86,4 @@ plugins:
   strategy: {}
   test: {}
   vars: {}
-version: 0.4.0
+version: 0.5.0
