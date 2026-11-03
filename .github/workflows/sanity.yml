@@ -24,4 +24,4 @@ jobs:
 
       - name: Run sanity tests
         working-directory: ansible_collections/shaerpour/nexus
-        run: ansible-test sanity --docker default -v
+        run: ansible-test sanity --venv --python 3.13 -v
