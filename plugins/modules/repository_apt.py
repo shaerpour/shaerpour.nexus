@@ -75,7 +75,8 @@ options:
   distribution:
     description:
       - Distribution name, for example C(focal) or C(bookworm).
-      - Required when I(type=hosted), and when I(type=proxy) unless I(flat=true).
+      - Required when I(type=hosted).
+      - Optional when I(type=proxy). Leave it out to proxy every distribution of the remote repository.
     type: str
   flat:
     description:
@@ -156,7 +157,7 @@ def build_payload(params):
             payload["aptSigning"]["passphrase"] = params["signing_passphrase"]
     else:
         payload["apt"] = {"flat": params["flat"]}
-        if params["distribution"] is not None:
+        if params["distribution"]:
             payload["apt"]["distribution"] = params["distribution"]
         payload["proxy"] = {
             "remoteUrl": params["remote_url"],
@@ -228,7 +229,7 @@ def missing_options(params):
     if params["type"] == "hosted":
         required = ["distribution", "signing_keypair"]
     else:
-        required = ["remote_url"] if params["flat"] else ["remote_url", "distribution"]
+        required = ["remote_url"]
     return [name for name in required if not params[name]]
 
 

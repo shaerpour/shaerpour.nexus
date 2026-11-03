@@ -65,6 +65,28 @@
         distribution: noble
       register: proxy_again
 
+    - name: Create proxy repository without distribution
+      shaerpour.nexus.repository_apt:
+        name: test-apt-proxy-all
+        type: proxy
+        remote_url: http://archive.ubuntu.com/ubuntu/
+      register: proxy_all
+
+    - name: Create proxy repository without distribution again
+      shaerpour.nexus.repository_apt:
+        name: test-apt-proxy-all
+        type: proxy
+        remote_url: http://archive.ubuntu.com/ubuntu/
+      register: proxy_all_again
+
+    - name: Create proxy repository with an empty distribution again
+      shaerpour.nexus.repository_apt:
+        name: test-apt-proxy-all
+        type: proxy
+        remote_url: http://archive.ubuntu.com/ubuntu/
+        distribution: ""
+      register: proxy_all_empty
+
     - name: Hosted without signing_keypair fails
       shaerpour.nexus.repository_apt:
         name: test-apt-invalid
@@ -89,6 +111,9 @@
           - update is changed
           - proxy is changed
           - proxy_again is not changed
+          - proxy_all is changed
+          - proxy_all_again is not changed
+          - proxy_all_empty is not changed
           - invalid_hosted is failed
           - invalid_proxy is failed
 
@@ -99,5 +124,6 @@
         type: "{{ item.type }}"
         state: absent
       loop:
+        - {name: test-apt-proxy-all, type: proxy}
         - {name: test-apt-proxy, type: proxy}
         - {name: test-apt-hosted, type: hosted}
