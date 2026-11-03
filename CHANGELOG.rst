@@ -4,6 +4,14 @@ shaerpour.nexus Release Notes
 
 .. contents:: Topics
 
+v0.5.1
+======
+
+Bugfixes
+--------
+
+- repository_apt - do not require ``distribution`` for proxy repositories.
+
 v0.5.0
 ======
 

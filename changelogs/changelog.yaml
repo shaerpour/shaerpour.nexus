@@ -99,3 +99,10 @@ releases:
       name: blob_store_s3
       namespace: ''
     release_date: '2026-11-03'
+  0.5.1:
+    changes:
+      bugfixes:
+      - repository_apt - do not require ``distribution`` for proxy repositories.
+    fragments:
+    - apt-proxy-distribution.yml
+    release_date: '2026-11-03'
