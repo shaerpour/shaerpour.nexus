@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       nexus:
-        image: sonatype/nexus3
+        image: sonatype/nexus3:3.97.0
         ports:
           - 8081:8081
         env:
