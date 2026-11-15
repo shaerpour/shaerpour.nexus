@@ -34,7 +34,7 @@ class NexusClient:
         self.validate_certs = validate_certs
 
     def request(self, method, path, data=None, content_type="application/json"):
-        """Return the decoded JSON body, or None for an empty body or a 404."""
+        """Return the decoded JSON body, or None for an empty body or a GET/DELETE 404."""
         body = None if data is None else json.dumps(data) if content_type == "application/json" else data
         try:
             response = open_url(
@@ -48,7 +48,7 @@ class NexusClient:
                 validate_certs=self.validate_certs,
             )
         except HTTPError as e:
-            if e.code == 404:
+            if e.code == 404 and method in ("GET", "DELETE"):
                 return None
             raise NexusError(f"{method} {path} failed: {e.code} {e.read().decode()}") from e
         content = response.read()
