@@ -33,15 +33,15 @@ class NexusClient:
         self.password = password
         self.validate_certs = validate_certs
 
-    def request(self, method, path, data=None):
+    def request(self, method, path, data=None, content_type="application/json"):
         """Return the decoded JSON body, or None for an empty body or a 404."""
-        body = None if data is None else json.dumps(data)
+        body = None if data is None else json.dumps(data) if content_type == "application/json" else data
         try:
             response = open_url(
                 self.base + path,
                 method=method,
                 data=body,
-                headers=self.headers,
+                headers={**self.headers, "Content-Type": content_type},
                 url_username=self.username,
                 url_password=self.password,
                 force_basic_auth=True,

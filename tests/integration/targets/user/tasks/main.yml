@@ -1,0 +1,358 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.user
+  module_defaults:
+    shaerpour.nexus.user:
+      url: '{{ nexus_url }}'
+      username: '{{ nexus_username }}'
+      password: '{{ nexus_password }}'
+  block:
+
+    - name: Create user in check mode
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        first_name: Test
+        last_name: User
+        email: test-user@example.com
+        roles:
+          - nx-admin
+          - nx-anonymous
+        user_password: Test-user-initial-123456!
+      register: check
+      check_mode: true
+
+    - name: Verify check mode did not create the user
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        state: absent
+      register: check_absent
+
+    - name: Missing creation options fails
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+      register: missing
+      ignore_errors: true
+
+    - name: Create local user
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        first_name: Test
+        last_name: User
+        email: test-user@example.com
+        roles:
+          - nx-admin
+          - nx-anonymous
+        user_password: Test-user-initial-123456!
+      register: create
+
+    - name: Create local user again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        first_name: Test
+        last_name: User
+        email: test-user@example.com
+        roles:
+          - nx-admin
+          - nx-anonymous
+        user_password: Test-user-initial-123456!
+      register: again
+
+    - name: Role order and duplicates do not change the user
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        roles:
+          - nx-anonymous
+          - nx-admin
+          - nx-anonymous
+      register: role_order
+
+    - name: Update profile in check mode
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        first_name: Updated
+      register: update_check
+      check_mode: true
+
+    - name: Verify check mode preserved profile
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        first_name: Test
+        last_name: User
+        email: test-user@example.com
+        roles:
+          - nx-admin
+          - nx-anonymous
+        user_password: Test-user-initial-123456!
+      register: update_unchanged
+
+    - name: Update profile without a password
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        first_name: Updated
+        last_name: Reader
+        email: updated-user@example.com
+      register: update
+
+    - name: Update profile again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        first_name: Updated
+        last_name: Reader
+        email: updated-user@example.com
+      register: update_again
+
+    - name: Read user after partial update
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/users?source=default&userId=test-nexus-user'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+      register: profile
+      no_log: true
+
+    - name: Preserve omitted fields
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+      register: preserve
+
+    - name: Ignore password changes with the default policy
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        user_password: Ignored-password-123456!
+      register: on_create
+
+    - name: Verify original password still works
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/users?source=default&userId=test-nexus-user'
+        url_username: test-nexus-user
+        url_password: Test-user-initial-123456!
+        force_basic_auth: true
+        status_code: 200
+      no_log: true
+
+    - name: Rotate password in check mode
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        user_password: Test-user-rotated-654321!
+        update_password: always
+      register: password_check
+      check_mode: true
+
+    - name: Verify password check mode preserved the original password
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/users?source=default&userId=test-nexus-user'
+        url_username: test-nexus-user
+        url_password: Test-user-initial-123456!
+        force_basic_auth: true
+        status_code: 200
+      no_log: true
+
+    - name: Rotate password
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        user_password: Test-user-rotated-654321!
+        update_password: always
+      register: rotate
+
+    - name: Verify rotated password works
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/users?source=default&userId=test-nexus-user'
+        url_username: test-nexus-user
+        url_password: Test-user-rotated-654321!
+        force_basic_auth: true
+        status_code: 200
+      no_log: true
+
+    - name: Verify original password is rejected
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/users?source=default&userId=test-nexus-user'
+        url_username: test-nexus-user
+        url_password: Test-user-initial-123456!
+        force_basic_auth: true
+        status_code: 401
+      no_log: true
+
+    - name: Always policy reports a change on each run
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        user_password: Test-user-rotated-654321!
+        update_password: always
+      register: rotate_again
+
+    - name: Always policy without a password fails
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        update_password: always
+      register: invalid_password
+      ignore_errors: true
+
+    - name: Invalid status fails
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: invalid
+      register: invalid_status
+      ignore_errors: true
+
+    - name: Set account status to locked
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: locked
+      register: status_locked
+
+    - name: Set account status to locked again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: locked
+      register: status_locked_again
+
+    - name: Set account status to disabled
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: disabled
+      register: status_disabled
+
+    - name: Set account status to disabled again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: disabled
+      register: status_disabled_again
+
+    - name: Set account status to changepassword
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: changepassword
+      register: status_changepassword
+
+    - name: Set account status to changepassword again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: changepassword
+      register: status_changepassword_again
+
+    - name: Set account status to active
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: active
+      register: status_active
+
+    - name: Set account status to active again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        status: active
+      register: status_active_again
+
+    - name: Clear all role assignments
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        roles: []
+      register: clear_roles
+
+    - name: Clear role assignments again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        roles: []
+      register: clear_roles_again
+
+    - name: Verify roles are empty and profile preserved
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/users?source=default&userId=test-nexus-user'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+      register: cleared
+      no_log: true
+
+    - name: Search prefix does not delete the longer user ID
+      shaerpour.nexus.user:
+        user_id: test-nexus-use
+        state: absent
+      register: prefix_absent
+
+    - name: Delete user in check mode
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        state: absent
+      register: delete_check
+      check_mode: true
+
+    - name: Verify check mode preserved the user
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+      register: delete_unchanged
+
+    - name: Delete user without other options
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        state: absent
+      register: delete
+
+    - name: Delete user again
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        state: absent
+      register: delete_again
+
+    - name: Verify deleted user is absent
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/users?source=default&userId=test-nexus-user'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+      register: deleted
+      no_log: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - check is changed
+          - check_absent is not changed
+          - missing is failed
+          - create is changed
+          - again is not changed
+          - role_order is not changed
+          - update_check is changed
+          - update_unchanged is not changed
+          - update is changed
+          - update_again is not changed
+          - profile.json | length == 1
+          - profile.json[0].firstName == 'Updated'
+          - profile.json[0].lastName == 'Reader'
+          - profile.json[0].emailAddress == 'updated-user@example.com'
+          - profile.json[0].roles | sort == ['nx-admin', 'nx-anonymous']
+          - preserve is not changed
+          - on_create is not changed
+          - password_check is changed
+          - rotate is changed
+          - rotate_again is changed
+          - invalid_password is failed
+          - invalid_status is failed
+          - status_locked is changed
+          - status_locked_again is not changed
+          - status_disabled is changed
+          - status_disabled_again is not changed
+          - status_changepassword is changed
+          - status_changepassword_again is not changed
+          - status_active is changed
+          - status_active_again is not changed
+          - clear_roles is changed
+          - clear_roles_again is not changed
+          - cleared.json[0].roles == []
+          - cleared.json[0].firstName == 'Updated'
+          - cleared.json[0].emailAddress == 'updated-user@example.com'
+          - prefix_absent is not changed
+          - delete_check is changed
+          - delete_unchanged is not changed
+          - delete is changed
+          - delete_again is not changed
+          - deleted.json == []
+  always:
+
+    - name: Delete local test user
+      shaerpour.nexus.user:
+        user_id: test-nexus-user
+        state: absent
