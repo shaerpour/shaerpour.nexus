@@ -1,0 +1,380 @@
+# Copyright: (c) 2026, Amirhosein Shaerpour <shaerpourr@gmail.com>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# Needs a running Nexus. Connection settings come from tests/integration/integration_config.yml.
+- name: Test shaerpour.nexus.role
+  module_defaults:
+    shaerpour.nexus.role:
+      url: '{{ nexus_url }}'
+      username: '{{ nexus_username }}'
+      password: '{{ nexus_password }}'
+  block:
+
+    - name: Create parent role with defaults
+      shaerpour.nexus.role:
+        role_id: test-nexus-role-parent
+      register: parent
+
+    - name: Create parent role again
+      shaerpour.nexus.role:
+        role_id: test-nexus-role-parent
+      register: parent_again
+
+    - name: Read default settings of parent role
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/roles/test-nexus-role-parent?source=default'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+        status_code: 200
+      register: parent_read
+      no_log: true
+
+    - name: Create role in check mode
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Test role
+        description: Role integration test
+        privileges:
+          - nx-repository-view-*-*-browse
+          - nx-repository-view-*-*-read
+        roles:
+          - nx-anonymous
+          - test-nexus-role-parent
+      register: check
+      check_mode: true
+
+    - name: Verify check mode did not create the role
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/roles/test-nexus-role?source=default'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+        status_code: 404
+      register: check_read
+      no_log: true
+
+    - name: Create role
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Test role
+        description: Role integration test
+        privileges:
+          - nx-repository-view-*-*-browse
+          - nx-repository-view-*-*-read
+        roles:
+          - nx-anonymous
+          - test-nexus-role-parent
+      register: create
+
+    - name: Create role again
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Test role
+        description: Role integration test
+        privileges:
+          - nx-repository-view-*-*-browse
+          - nx-repository-view-*-*-read
+        roles:
+          - nx-anonymous
+          - test-nexus-role-parent
+      register: again
+
+    - name: Read created role
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/roles/test-nexus-role?source=default'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+        status_code: 200
+      register: created
+      no_log: true
+
+    - name: List order and duplicates do not change the role
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        privileges:
+          - nx-repository-view-*-*-read
+          - nx-repository-view-*-*-browse
+          - nx-repository-view-*-*-read
+        roles:
+          - test-nexus-role-parent
+          - nx-anonymous
+          - nx-anonymous
+      register: list_order
+
+    - name: Update name and description in check mode
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Updated role
+        description: Updated description
+      register: update_check
+      check_mode: true
+
+    - name: Verify check mode preserved settings
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Test role
+        description: Role integration test
+        privileges:
+          - nx-repository-view-*-*-browse
+          - nx-repository-view-*-*-read
+        roles:
+          - nx-anonymous
+          - test-nexus-role-parent
+      register: unchanged
+
+    - name: Update name and description
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Updated role
+        description: Updated description
+      register: update
+
+    - name: Update name and description again
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Updated role
+        description: Updated description
+      register: update_again
+
+    - name: Verify omitted privileges and inherited roles are preserved
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/roles/test-nexus-role?source=default'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+        status_code: 200
+      register: updated
+      no_log: true
+
+    - name: Preserve all omitted settings
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+      register: preserve
+
+    - name: Replace privileges
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        privileges:
+          - nx-repository-view-*-*-read
+      register: privileges
+
+    - name: Replace privileges again
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        privileges:
+          - nx-repository-view-*-*-read
+      register: privileges_again
+
+    - name: Replace inherited roles
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        roles:
+          - test-nexus-role-parent
+      register: inherited_roles
+
+    - name: Replace inherited roles again
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        roles:
+          - test-nexus-role-parent
+      register: roles_again
+
+    - name: Verify privilege and inheritance replacements
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/roles/test-nexus-role?source=default'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+        status_code: 200
+      register: replaced
+      no_log: true
+
+    - name: Clear description privileges and inherited roles
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        description: ''
+        privileges: []
+        roles: []
+      register: clear
+
+    - name: Clear settings again
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        description: ''
+        privileges: []
+        roles: []
+      register: clear_again
+
+    - name: Verify empty settings and preserved name
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/roles/test-nexus-role?source=default'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+        status_code: 200
+      register: cleared
+      no_log: true
+
+    - name: Empty role ID fails
+      shaerpour.nexus.role:
+        role_id: ''
+      register: invalid_id
+      ignore_errors: true
+
+    - name: Empty display name fails
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: ''
+      register: invalid_name
+      ignore_errors: true
+
+    - name: Nonexistent inherited role fails
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        roles:
+          - test-nexus-role-missing-parent
+      register: invalid_role
+      ignore_errors: true
+
+    - name: Self inheritance fails
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        roles:
+          - test-nexus-role
+      register: invalid_self
+      ignore_errors: true
+
+    - name: Verify rejected updates preserved settings
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        name: Updated role
+        description: ''
+        privileges: []
+        roles: []
+      register: invalid_unchanged
+
+    - name: Existing read-only role with no managed differences is unchanged
+      shaerpour.nexus.role:
+        role_id: nx-anonymous
+      register: readonly_noop
+
+    - name: Read-only update fails even in check mode
+      shaerpour.nexus.role:
+        role_id: nx-anonymous
+        description: Must not be applied
+      register: readonly_update
+      check_mode: true
+      ignore_errors: true
+
+    - name: Read-only delete fails even in check mode
+      shaerpour.nexus.role:
+        role_id: nx-anonymous
+        state: absent
+      register: readonly_delete
+      check_mode: true
+      ignore_errors: true
+
+    - name: Delete role in check mode
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        state: absent
+      register: delete_check
+      check_mode: true
+
+    - name: Verify check mode preserved role
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+      register: delete_unchanged
+
+    - name: Delete role without other settings
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        state: absent
+      register: delete
+
+    - name: Delete role again
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        state: absent
+      register: delete_again
+
+    - name: Verify role was deleted
+      ansible.builtin.uri:
+        url: '{{ nexus_url }}/service/rest/v1/security/roles/test-nexus-role?source=default'
+        url_username: '{{ nexus_username }}'
+        url_password: '{{ nexus_password }}'
+        force_basic_auth: true
+        return_content: true
+        status_code: 404
+      register: deleted
+      no_log: true
+
+    - name: Check results
+      ansible.builtin.assert:
+        that:
+          - parent is changed
+          - parent_again is not changed
+          - parent_read.json.name == 'test-nexus-role-parent'
+          - parent_read.json.description == ''
+          - parent_read.json.privileges == []
+          - parent_read.json.roles == []
+          - check is changed
+          - create is changed
+          - again is not changed
+          - created.json.name == 'Test role'
+          - created.json.description == 'Role integration test'
+          - created.json.privileges | sort == ['nx-repository-view-*-*-browse', 'nx-repository-view-*-*-read']
+          - created.json.roles | sort == ['nx-anonymous', 'test-nexus-role-parent']
+          - list_order is not changed
+          - update_check is changed
+          - unchanged is not changed
+          - update is changed
+          - update_again is not changed
+          - updated.json.name == 'Updated role'
+          - updated.json.description == 'Updated description'
+          - updated.json.privileges | sort == created.json.privileges | sort
+          - updated.json.roles | sort == created.json.roles | sort
+          - preserve is not changed
+          - privileges is changed
+          - privileges_again is not changed
+          - inherited_roles is changed
+          - roles_again is not changed
+          - replaced.json.privileges == ['nx-repository-view-*-*-read']
+          - replaced.json.roles == ['test-nexus-role-parent']
+          - clear is changed
+          - clear_again is not changed
+          - cleared.json.name == 'Updated role'
+          - cleared.json.description == ''
+          - cleared.json.privileges == []
+          - cleared.json.roles == []
+          - invalid_id is failed
+          - invalid_name is failed
+          - invalid_role is failed
+          - invalid_self is failed
+          - invalid_unchanged is not changed
+          - readonly_noop is not changed
+          - readonly_update is failed
+          - readonly_delete is failed
+          - delete_check is changed
+          - delete_unchanged is not changed
+          - delete is changed
+          - delete_again is not changed
+  always:
+
+    - name: Delete child role before its parent
+      shaerpour.nexus.role:
+        role_id: test-nexus-role
+        state: absent
+
+    - name: Delete parent role
+      shaerpour.nexus.role:
+        role_id: test-nexus-role-parent
+        state: absent
