@@ -81,9 +81,19 @@ plugins:
       name: repository_yum
       namespace: ''
       version_added: 0.4.0
+    role:
+      description: Manage Nexus local security roles
+      name: role
+      namespace: ''
+      version_added: 0.6.0
+    user:
+      description: Manage Nexus local users
+      name: user
+      namespace: ''
+      version_added: 0.6.0
   netconf: {}
   shell: {}
   strategy: {}
   test: {}
   vars: {}
-version: 0.5.1
+version: 0.6.0

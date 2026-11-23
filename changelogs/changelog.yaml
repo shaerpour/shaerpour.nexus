@@ -106,3 +106,19 @@ releases:
     fragments:
     - apt-proxy-distribution.yml
     release_date: '2026-11-03'
+  0.6.0:
+    changes:
+      minor_changes:
+      - role - add module to manage security roles
+      - user - add module to manage users
+    fragments:
+    - add-role.yml
+    - add-user.yml
+    modules:
+    - description: Manage Nexus local security roles.
+      name: role
+      namespace: ''
+    - description: Manage Nexus local users.
+      name: user
+      namespace: ''
+    release_date: '2026-11-23'
