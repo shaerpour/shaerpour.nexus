@@ -4,6 +4,21 @@ shaerpour.nexus Release Notes
 
 .. contents:: Topics
 
+v0.6.0
+======
+
+Minor Changes
+-------------
+
+- role - add module to manage security roles
+- user - add module to manage users
+
+New Modules
+-----------
+
+- shaerpour.nexus.role - Manage Nexus local security roles.
+- shaerpour.nexus.user - Manage Nexus local users.
+
 v0.5.1
 ======
 
